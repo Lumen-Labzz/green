@@ -18,7 +18,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const orderSummary = cart
       .map(
         (item) =>
-          `${item.qty} x ${item.product} — KES ${item.total.toLocaleString()}`,
+          `${item.qty} x ${item.name} — KES ${(item.qty * item.price).toLocaleString()}`,
       )
       .join("\n");
 

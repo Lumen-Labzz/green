@@ -2,24 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-
-/* ---------------- TYPES ---------------- */
-
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  image: string;
-}
-
-interface CartItem {
-  id: number;
-  name: string;
-  price: number;
-  qty: number;
-}
-
-/* ---------------- DATA ---------------- */
+import type { CartItem, Product } from "@/types";
 
 const PRODUCTS: Product[] = [
   {
@@ -47,12 +30,14 @@ const PRODUCTS: Product[] = [
   },
 ];
 
-/* ---------------- PAGE ---------------- */
-
 export default function Page() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [qty, setQty] = useState<Record<number, number>>({});
   const [cartOpen, setCartOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [notes, setNotes] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const addToCart = (product: Product) => {
     const amount = qty[product.id] ?? 0;
@@ -79,7 +64,49 @@ export default function Page() {
     setQty((q) => ({ ...q, [product.id]: 0 }));
   };
 
-  const total = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const updateCartItem = (id: number, newQty: number) => {
+    setCart((prev) =>
+      prev
+        .map((i) => (i.id === id ? { ...i, qty: newQty } : i))
+        .filter((i) => i.qty > 0),
+    );
+  };
+
+  const cartTotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const cartCount = cart.reduce((sum, i) => sum + i.qty, 0);
+
+  const sendOrder = async () => {
+    if (cart.length === 0 || !name || !phone) {
+      alert("Please fill in your details and add items to the cart.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/send-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cart, total: cartTotal, name, phone, notes }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        alert("Order sent successfully!");
+        setCart([]);
+        setName("");
+        setPhone("");
+        setNotes("");
+        setCartOpen(false);
+      } else {
+        alert("Failed to send order. Try again.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred. Try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-linear-to-b from-[#02020a] to-[#060615] text-[#e8e8f0]">
@@ -102,7 +129,7 @@ export default function Page() {
               onClick={() => setCartOpen(true)}
               className="hover:text-cyan-300"
             >
-              Order
+              Order ({cartCount})
             </button>
           </nav>
         </div>
@@ -138,8 +165,7 @@ export default function Page() {
               <div
                 key={p.id}
                 className="rounded-xl border border-white/5 bg-white/3 p-3
-                  transition hover:-translate-y-1
-                  hover:shadow-[0_20px_50px_rgba(120,80,200,0.15)]"
+                  transition hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(120,80,200,0.15)]"
               >
                 <Image
                   src={p.image}
@@ -166,8 +192,7 @@ export default function Page() {
                   <button
                     type="button"
                     onClick={() => addToCart(p)}
-                    className="rounded-lg border border-cyan-300/30 px-3 py-1 text-sm
-                      text-cyan-300 hover:bg-cyan-300/10"
+                    className="rounded-lg border border-cyan-300/30 px-3 py-1 text-sm text-cyan-300 hover:bg-cyan-300/10"
                   >
                     Add
                   </button>
@@ -178,66 +203,53 @@ export default function Page() {
         </div>
       </section>
 
-      {/* GALLERY */}
-      <section id="gallery" className="py-16">
-        <div className="mx-auto max-w-6xl px-4">
-          <h2 className="mb-6 text-sm tracking-widest text-cyan-300">
-            GALLERY
-          </h2>
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3">
-            {[1, 2, 3, 4].map((i) => (
-              <Image
-                key={i}
-                src={`/assets/gallery${i}.jpg`}
-                alt={`Gallery image ${i}`}
-                width={400}
-                height={300}
-                className="h-36 w-full rounded-lg object-cover"
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ABOUT */}
-      <section id="about" className="py-16">
-        <div className="mx-auto max-w-prose px-4">
-          <h2 className="mb-4 text-sm tracking-widest text-cyan-300">ABOUT</h2>
-          <p className="text-gray-400">
-            Born where stardust meets chill vibes — Galactic Greens crafts
-            curated cannabis experiences and premium accessories designed to
-            elevate your universe.
-          </p>
-        </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer className="border-t border-white/5 py-6 text-center text-sm text-gray-400">
-        © {new Date().getFullYear()} Galactic Greens
-      </footer>
-
       {/* CART MODAL */}
       {cartOpen && (
         <CartModal
           cart={cart}
-          total={total}
+          total={cartTotal}
+          name={name}
+          setName={setName}
+          phone={phone}
+          setPhone={setPhone}
+          notes={notes}
+          setNotes={setNotes}
           onClose={() => setCartOpen(false)}
+          updateCartItem={updateCartItem}
+          sendOrder={sendOrder}
+          isSubmitting={isSubmitting}
         />
       )}
     </div>
   );
 }
 
-/* ---------------- CART MODAL ---------------- */
-
 function CartModal({
   cart,
   total,
+  name,
+  setName,
+  phone,
+  setPhone,
+  notes,
+  setNotes,
   onClose,
+  updateCartItem,
+  sendOrder,
+  isSubmitting,
 }: {
   cart: CartItem[];
   total: number;
+  name: string;
+  setName: (v: string) => void;
+  phone: string;
+  setPhone: (v: string) => void;
+  notes: string;
+  setNotes: (v: string) => void;
   onClose: () => void;
+  updateCartItem: (id: number, qty: number) => void;
+  sendOrder: () => void;
+  isSubmitting: boolean;
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
@@ -249,11 +261,21 @@ function CartModal({
             <p className="text-sm text-gray-400">Cart is empty.</p>
           )}
           {cart.map((i) => (
-            <div key={i.id} className="flex justify-between text-sm">
-              <span>
-                {i.name} × {i.qty}
-              </span>
-              <span>KSh {(i.qty * i.price).toLocaleString()}</span>
+            <div
+              key={i.id}
+              className="flex justify-between text-sm items-center gap-2"
+            >
+              <span>{i.name}</span>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  value={i.qty}
+                  onChange={(e) => updateCartItem(i.id, Number(e.target.value))}
+                  className="w-16 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-sm"
+                />
+                <span>KSh {(i.qty * i.price).toLocaleString()}</span>
+              </div>
             </div>
           ))}
         </div>
@@ -267,22 +289,29 @@ function CartModal({
             type="text"
             placeholder="Full name"
             className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
           />
           <input
             type="text"
             placeholder="Phone / WhatsApp"
             className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
           />
           <textarea
             placeholder="Delivery instructions (optional)"
             className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
           />
           <button
             type="button"
-            className="w-full rounded-lg bg-linear-to-r from-cyan-300 to-purple-400 py-2
-              font-semibold text-black"
+            className="w-full rounded-lg bg-linear-to-r from-cyan-300 to-purple-400 py-2 font-semibold text-black"
+            onClick={sendOrder}
+            disabled={isSubmitting}
           >
-            Send Order
+            {isSubmitting ? "Sending..." : "Send Order"}
           </button>
         </form>
 
