@@ -9,24 +9,24 @@ const PRODUCTS: Product[] = [
     id: 1,
     name: "Accessories (Ashtrays & Trays)",
     price: 0,
-    image: "/assets/accessory1.jpg",
+    image: "/p1.png",
   },
-  { id: 2, name: "Grinder", price: 2000, image: "/assets/grinder.jpg" },
-  { id: 3, name: "Bong", price: 2000, image: "/assets/bong.jpg" },
-  { id: 4, name: "Cookies — 2pc", price: 350, image: "/assets/cookies.jpg" },
-  { id: 5, name: "Kashata", price: 150, image: "/assets/kashata.jpg" },
-  { id: 6, name: "Mabuyu", price: 150, image: "/assets/mabuyu.jpg" },
+  { id: 2, name: "Grinder", price: 2000, image: "/p4.png" },
+  { id: 3, name: "Bong", price: 2000, image: "/p2.png" },
+  { id: 4, name: "Cookies — 2pc", price: 350, image: "/p1.png" },
+  { id: 5, name: "Kashata", price: 150, image: "/p1.png" },
+  { id: 6, name: "Mabuyu", price: 150, image: "/p3.png" },
   {
     id: 7,
     name: "Pre-roll (Foreign)",
     price: 150,
-    image: "/assets/preroll1.jpg",
+    image: "/p1.png",
   },
   {
     id: 8,
     name: "Pre-roll (Skunk)",
     price: 100,
-    image: "/assets/preroll2.jpg",
+    image: "/p1.png",
   },
 ];
 
@@ -220,6 +220,26 @@ export default function Page() {
           isSubmitting={isSubmitting}
         />
       )}
+
+      {/* ABOUT */}
+      <section id="about" className="py-16">
+        <div className="mx-auto max-w-prose px-4">
+          <h2 className="mb-4 text-sm tracking-widest text-cyan-300">
+            About Galactic Greens
+          </h2>
+          <p className="text-gray-400">
+            Born where stardust meets chill vibes — Galactic Greens crafts
+            curated cannabis experiences and premium accessories. From
+            glow-ready ashtrays to hand-rolled pre-rolls, every product is
+            designed to help you elevate your universe.
+          </p>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="border-t border-white/5 py-6 text-center text-sm text-gray-400">
+        © {new Date().getFullYear()} Galactic Greens — All rights reserved.
+      </footer>
     </div>
   );
 }
